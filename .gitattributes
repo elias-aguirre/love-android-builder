@@ -1,0 +1,2 @@
+# For shell scripts, force LF to avoid issues in Docker/Linux
+*.sh        eol=lf
