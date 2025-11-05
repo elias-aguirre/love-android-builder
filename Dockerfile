@@ -4,7 +4,8 @@ FROM openjdk:17-jdk-slim
 # Environment variables
 ENV ANDROID_HOME=/opt/android-sdk
 ENV JAVA_HOME=/usr/local/openjdk-17
-ENV PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$JAVA_HOME/bin:$PATH
+ENV GRADLE_HOME=/opt/gradle/gradle-8.1
+ENV PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH
 
 # We install dependencies and download the Command-line Tools 
 RUN apt-get update -qq \
@@ -19,9 +20,17 @@ RUN apt-get update -qq \
 # Accept the Android SDK licenses
 RUN yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses 
 
-# We install git / bash / python3
+# We install git / bash / python3 / gradle
 RUN apt-get update -qq \
- && apt-get install -y --no-install-recommends git bash python3
+ && apt-get install -y --no-install-recommends git bash python3 
+
+RUN wget -q https://services.gradle.org/distributions/gradle-8.1-bin.zip -O gradle-8.1-bin.zip
+
+RUN unzip -d /opt/gradle gradle-8.1-bin.zip \
+ && rm gradle-8.1-bin.zip \
+ && ls /opt/gradle/gradle-8.1
+
+RUN gradle -v
 
 WORKDIR /app
 
@@ -54,13 +63,13 @@ RUN ./generate_keystore.sh
 WORKDIR /app/love-android
 
 # Build APK (No Record)
-RUN ./gradlew assembleEmbedNoRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
+RUN gradle assembleEmbedNoRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
 
 # Build APK (Record)
-RUN ./gradlew assembleEmbedRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
+RUN gradle assembleEmbedRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
 
 # Build AAB (No Record)
-RUN ./gradlew bundleEmbedNoRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
+RUN gradle bundleEmbedNoRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
 
 # Build AAB (Record)
-RUN ./gradlew bundleEmbedRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
+RUN gradle bundleEmbedRecordRelease -Dorg.gradle.jvmargs="-Xmx4096M"
